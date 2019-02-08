@@ -655,7 +655,7 @@ public class Channel implements Serializable {
 
             final Properties properties = peer.getProperties();
             if ((properties == null) || (isNullOrEmpty(properties.getProperty("clientCertFile")) &&
-                    isNullOrEmpty(properties.getProperty("clientCertBytes")))) {
+                    !properties.containsKey("clientCertBytes"))) {
                 TLSCertificateBuilder tlsCertificateBuilder = new TLSCertificateBuilder();
                 TLSCertificateKeyPair tlsCertificateKeyPair = tlsCertificateBuilder.clientCert();
                 peer.setTLSCertificateKeyPair(tlsCertificateKeyPair);

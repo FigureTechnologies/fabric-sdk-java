@@ -13,17 +13,29 @@
             <username>${env.OSSRH_USER_TOKEN}</username>
             <password>${env.OSSRH_PWD_TOKEN}</password>
         </server>
-     </servers>
+        <server>
+            <id>provenance-nexus</id>
+            <username>${env.NEXUS_USER}</username>
+            <password>${env.NEXUS_PASS}</password>
+        </server>
+    </servers>
    <profiles>
         <profile>
             <id>ossrh</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
                 <gpg.keyname>${env.GPG_KEY}</gpg.keyname>
                 <gpg.passphrase>${env.GPG_PWD}</gpg.passphrase>
             </properties>
         </profile>
-    </profiles>
+       <profile>
+           <id>provenance-nexus</id>
+           <activation>
+               <activeByDefault>true</activeByDefault>
+           </activation>
+       </profile>
+
+   </profiles>
 </settings>
