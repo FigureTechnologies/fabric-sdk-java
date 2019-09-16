@@ -1,3 +1,27 @@
+## v1.4.4
+Tue Jun 11 08:56:25 EDT 2019
+
+* [dc4b7e8f](https://github.com/hyperledger/fabric-sdk-java/commit/dc4b7e8f) FABJ-448 Provide access to system channel configuration
+* [7039a861](https://github.com/hyperledger/fabric-sdk-java/commit/7039a861) FABJ-446 Start of 1.4.4
+* [69c15a82](https://github.com/hyperledger/fabric-sdk-java/commit/69c15a82) FABJ-434 Expose org info for peers
+
+## v1.4.3
+Tue May 21 11:15:04 EDT 2019
+
+* [459652f4](https://github.com/hyperledger/fabric-sdk-java/commit/459652f4) FABJ-442 Servicediscovery logging enhancements.
+* [d491018c](https://github.com/hyperledger/fabric-sdk-java/commit/d491018c) FABJ-429 Provide current disconnect handler on peer
+
+## v1.4.2
+Fri May  3 12:37:17 EDT 2019
+
+* [17acd23](https://github.com/hyperledger/fabric-sdk-java/commit/17acd23) FABJ-437 Fix ca URL parameter
+* [c437326](https://github.com/hyperledger/fabric-sdk-java/commit/c437326) FABJ-433 Fix return SD overrides.
+
+## v1.4.1
+Tue Mar  5 10:41:02 EST 2019
+
+* [461a5e8](https://github.com/hyperledger/fabric-sdk-java/commit/461a5e8) FABJ-406 Service Discovery TLS Error Using Cert Bytes
+
 ## v1.4.0
 Thu Dec 13 10:19:04 EST 2018
 
