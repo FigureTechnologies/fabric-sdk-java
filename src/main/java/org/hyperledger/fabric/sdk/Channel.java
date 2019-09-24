@@ -38,7 +38,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
@@ -55,7 +54,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -133,7 +131,6 @@ import org.hyperledger.fabric.sdk.transaction.UpgradeProposalBuilder;
 import static java.lang.String.format;
 import static org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions;
 import static org.hyperledger.fabric.sdk.Channel.TransactionOptions.createTransactionOptions;
-import static org.hyperledger.fabric.sdk.Peer.PEER_ORGANIZATION_MSPID_PROPERTY;
 import static org.hyperledger.fabric.sdk.User.userContextCheck;
 import static org.hyperledger.fabric.sdk.helper.Utils.isNullOrEmpty;
 import static org.hyperledger.fabric.sdk.helper.Utils.toHexString;
@@ -706,7 +703,7 @@ public class Channel implements Serializable {
         Properties properties = peer.getProperties();
 
         if (null != properties) {
-            final String mspid = properties.getProperty(PEER_ORGANIZATION_MSPID_PROPERTY);
+            final String mspid = properties.getProperty(Peer.PEER_ORGANIZATION_MSPID_PROPERTY);
             if (!isNullOrEmpty(mspid)) {
                 logger.debug(format("Channel %s mapping peer %s to mspid %s", name, peer, mspid));
                 synchronized (peerMSPIDMap) {
@@ -720,7 +717,7 @@ public class Channel implements Serializable {
         Properties properties = peer.getProperties();
 
         if (null != properties) {
-            final String mspid = properties.getProperty(PEER_ORGANIZATION_MSPID_PROPERTY);
+            final String mspid = properties.getProperty(Peer.PEER_ORGANIZATION_MSPID_PROPERTY);
             if (!isNullOrEmpty(mspid)) {
                 logger.debug(format("Channel %s removing mapping peer %s to mspid %s", name, peer, mspid));
                 synchronized (peerMSPIDMap) {
@@ -1476,7 +1473,7 @@ public class Channel implements Serializable {
             } else if (discoveryEndpoints.contains(sdEndorser.getEndpoint())) {
 
                 //hackfest here....  if the user didn't supply msspid retro fit for disovery peers
-                if (peer.getProperties() == null || isNullOrEmpty(peer.getProperties().getProperty(PEER_ORGANIZATION_MSPID_PROPERTY))) {
+                if (peer.getProperties() == null || isNullOrEmpty(peer.getProperties().getProperty(Peer.PEER_ORGANIZATION_MSPID_PROPERTY))) {
 
                     synchronized (peerMSPIDMap) {
                         peerMSPIDMap.computeIfAbsent(sdEndorserMspid, k -> new HashSet<>()).add(peer);
@@ -1485,7 +1482,7 @@ public class Channel implements Serializable {
                     if (properties == null) {
                         properties = new Properties();
                     }
-                    properties.put(PEER_ORGANIZATION_MSPID_PROPERTY, sdEndorserMspid);
+                    properties.put(Peer.PEER_ORGANIZATION_MSPID_PROPERTY, sdEndorserMspid);
                     peer.setProperties(properties);
 
                 }
@@ -1747,7 +1744,7 @@ public class Channel implements Serializable {
                 properties.put("clientCertFile", clientCertFile);
             }
 
-            properties.put(PEER_ORGANIZATION_MSPID_PROPERTY, sdPeerAddition.getMspId());
+            properties.put(Peer.PEER_ORGANIZATION_MSPID_PROPERTY, sdPeerAddition.getMspId());
 
             byte[] clientKeyBytes = (byte[]) findClientProp(config, "clientKeyBytes", mspid, endpoint, null);
             String clientKeyFile = (String) findClientProp(config, "clientKeyFile", mspid, endpoint, null);
@@ -4149,28 +4146,6 @@ public class Channel implements Serializable {
                                 return Collections.unmodifiableMap(Channel.this.peerEndpointMap);
                             }
                         });
-                    }
-                    /*
-                    provenance.io -> if the anchor peer uses mutual
-                    tls then so will the discovered epeers - copy the
-                    grpc options from the anchor peer (the clientCertBytes and clientKeyBytes)
-                    to the discovered peer
-                     */
-                    Peer finalEpeer = epeer;
-                    Optional<Peer> sdPeerO = getServiceDiscoveryPeers().stream()
-                            .filter(p -> p.getProperties().get(PEER_ORGANIZATION_MSPID_PROPERTY).equals(
-                                finalEpeer.getProperties().get(PEER_ORGANIZATION_MSPID_PROPERTY)))
-                            .findFirst();
-
-                    if (sdPeerO.isPresent()) {
-                        Peer sdPeer = sdPeerO.get();
-                        if(sdPeer.getProperties().containsKey("clientCertBytes") || sdPeer.getProperties().containsKey("clientKeyBytes")
-                                || sdPeer.getProperties().containsKey("clientCertFile") || sdPeer.getProperties().containsKey("clientKeyFile")) {
-                            epeer.setProperties(
-                                    Stream.of(sdPeer.getProperties(), epeer.getProperties()).collect(Properties::new,
-                                            Map::putAll, Map::putAll)
-                            );
-                        }
                     }
                     endorsers.put(sdEndorser, epeer);
                     peer2sdEndorser.put(new PeerExactMatch(epeer), sdEndorser); // reverse
