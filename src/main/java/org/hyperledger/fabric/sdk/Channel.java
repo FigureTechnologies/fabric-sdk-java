@@ -55,6 +55,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -4155,9 +4156,6 @@ public class Channel implements Serializable {
                     grpc options from the anchor peer (the clientCertBytes and clientKeyBytes)
                     to the discovered peer
                      */
-                    epeer.getProperties().containsKey("clientCertBytes");
-                    epeer.getProperties().containsKey("clientKeyBytes");
-
                     Peer finalEpeer = epeer;
                     Optional<Peer> sdPeerO = getServiceDiscoveryPeers().stream()
                             .filter(p -> p.getProperties().get(PEER_ORGANIZATION_MSPID_PROPERTY).equals(
@@ -4166,17 +4164,12 @@ public class Channel implements Serializable {
 
                     if (sdPeerO.isPresent()) {
                         Peer sdPeer = sdPeerO.get();
-                        if(sdPeer.getProperties().containsKey("clientCertBytes")) {
-                            epeer.getProperties().put("clientCertBytes", sdPeer.getProperties().get("clientCertBytes"));
-                        }
-                        if(sdPeer.getProperties().containsKey("clientKeyBytes")) {
-                            epeer.getProperties().put("clientKeyBytes", sdPeer.getProperties().get("clientKeyBytes"));
-                        }
-                        if(sdPeer.getProperties().containsKey("clientCertFile")) {
-                            epeer.getProperties().put("clientCertFile", sdPeer.getProperties().get("clientCertFile"));
-                        }
-                        if(sdPeer.getProperties().containsKey("clientKeyFile")) {
-                            epeer.getProperties().put("clientKeyFile", sdPeer.getProperties().get("clientKeyFile"));
+                        if(sdPeer.getProperties().containsKey("clientCertBytes") || sdPeer.getProperties().containsKey("clientKeyBytes")
+                                || sdPeer.getProperties().containsKey("clientCertFile") || sdPeer.getProperties().containsKey("clientKeyFile")) {
+                            epeer.setProperties(
+                                    Stream.of(sdPeer.getProperties(), epeer.getProperties()).collect(Properties::new,
+                                            Map::putAll, Map::putAll)
+                            );
                         }
                     }
                     endorsers.put(sdEndorser, epeer);
