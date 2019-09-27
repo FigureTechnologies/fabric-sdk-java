@@ -38,6 +38,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
@@ -131,6 +132,7 @@ import org.hyperledger.fabric.sdk.transaction.UpgradeProposalBuilder;
 import static java.lang.String.format;
 import static org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions;
 import static org.hyperledger.fabric.sdk.Channel.TransactionOptions.createTransactionOptions;
+import static org.hyperledger.fabric.sdk.Peer.PEER_ORGANIZATION_MSPID_PROPERTY;
 import static org.hyperledger.fabric.sdk.User.userContextCheck;
 import static org.hyperledger.fabric.sdk.helper.Utils.isNullOrEmpty;
 import static org.hyperledger.fabric.sdk.helper.Utils.toHexString;
@@ -703,7 +705,7 @@ public class Channel implements Serializable {
         Properties properties = peer.getProperties();
 
         if (null != properties) {
-            final String mspid = properties.getProperty(Peer.PEER_ORGANIZATION_MSPID_PROPERTY);
+            final String mspid = properties.getProperty(PEER_ORGANIZATION_MSPID_PROPERTY);
             if (!isNullOrEmpty(mspid)) {
                 logger.debug(format("Channel %s mapping peer %s to mspid %s", name, peer, mspid));
                 synchronized (peerMSPIDMap) {
@@ -717,7 +719,7 @@ public class Channel implements Serializable {
         Properties properties = peer.getProperties();
 
         if (null != properties) {
-            final String mspid = properties.getProperty(Peer.PEER_ORGANIZATION_MSPID_PROPERTY);
+            final String mspid = properties.getProperty(PEER_ORGANIZATION_MSPID_PROPERTY);
             if (!isNullOrEmpty(mspid)) {
                 logger.debug(format("Channel %s removing mapping peer %s to mspid %s", name, peer, mspid));
                 synchronized (peerMSPIDMap) {
@@ -1473,7 +1475,7 @@ public class Channel implements Serializable {
             } else if (discoveryEndpoints.contains(sdEndorser.getEndpoint())) {
 
                 //hackfest here....  if the user didn't supply msspid retro fit for disovery peers
-                if (peer.getProperties() == null || isNullOrEmpty(peer.getProperties().getProperty(Peer.PEER_ORGANIZATION_MSPID_PROPERTY))) {
+                if (peer.getProperties() == null || isNullOrEmpty(peer.getProperties().getProperty(PEER_ORGANIZATION_MSPID_PROPERTY))) {
 
                     synchronized (peerMSPIDMap) {
                         peerMSPIDMap.computeIfAbsent(sdEndorserMspid, k -> new HashSet<>()).add(peer);
@@ -1482,7 +1484,7 @@ public class Channel implements Serializable {
                     if (properties == null) {
                         properties = new Properties();
                     }
-                    properties.put(Peer.PEER_ORGANIZATION_MSPID_PROPERTY, sdEndorserMspid);
+                    properties.put(PEER_ORGANIZATION_MSPID_PROPERTY, sdEndorserMspid);
                     peer.setProperties(properties);
 
                 }
@@ -1744,7 +1746,7 @@ public class Channel implements Serializable {
                 properties.put("clientCertFile", clientCertFile);
             }
 
-            properties.put(Peer.PEER_ORGANIZATION_MSPID_PROPERTY, sdPeerAddition.getMspId());
+            properties.put(PEER_ORGANIZATION_MSPID_PROPERTY, sdPeerAddition.getMspId());
 
             byte[] clientKeyBytes = (byte[]) findClientProp(config, "clientKeyBytes", mspid, endpoint, null);
             String clientKeyFile = (String) findClientProp(config, "clientKeyFile", mspid, endpoint, null);
@@ -4098,7 +4100,7 @@ public class Channel implements Serializable {
                 Map<PeerExactMatch, SDEndorser> peer2sdEndorser = new HashMap<>(ep.size());
                 for (SDEndorser sdEndorser : ep) {
 
-                    Peer epeer = lpeerEndpointMap.get(sdEndorser.getEndpoint());
+                    final Peer epeer = lpeerEndpointMap.get(sdEndorser.getEndpoint());
                     if (epeer != null && !epeer.hasConnected()) {
                         // mostly because gossip may have malicious data so if we've not connected update TLS props from chaincode discovery.
                         final Properties properties = epeer.getProperties();
@@ -4146,6 +4148,26 @@ public class Channel implements Serializable {
                                 return Collections.unmodifiableMap(Channel.this.peerEndpointMap);
                             }
                         });
+                    }
+                    Optional<Peer> sdPeerO = getServiceDiscoveryPeers().stream()
+                            .filter(p -> p.getProperties().get(PEER_ORGANIZATION_MSPID_PROPERTY).equals(
+                                epeer.getProperties().get(PEER_ORGANIZATION_MSPID_PROPERTY)))
+                            .findFirst();
+
+                    if (sdPeerO.isPresent()) {
+                        Peer sdPeer = sdPeerO.get();
+                        if(sdPeer.getProperties().containsKey("clientCertBytes")) {
+                            epeer.getProperties().put("clientCertBytes", sdPeer.getProperties().get("clientCertBytes"));
+                        }
+                        if(sdPeer.getProperties().containsKey("clientKeyBytes")) {
+                            epeer.getProperties().put("clientKeyBytes", sdPeer.getProperties().get("clientKeyBytes"));
+                        }
+                        if(sdPeer.getProperties().containsKey("clientCertFile")) {
+                            epeer.getProperties().put("clientCertFile", sdPeer.getProperties().get("clientCertFile"));
+                        }
+                        if(sdPeer.getProperties().containsKey("clientKeyFile")) {
+                            epeer.getProperties().put("clientKeyFile", sdPeer.getProperties().get("clientKeyFile"));
+                        }
                     }
                     endorsers.put(sdEndorser, epeer);
                     peer2sdEndorser.put(new PeerExactMatch(epeer), sdEndorser); // reverse
