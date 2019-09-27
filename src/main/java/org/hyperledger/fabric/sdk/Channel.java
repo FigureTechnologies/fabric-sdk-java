@@ -4100,7 +4100,7 @@ public class Channel implements Serializable {
                 Map<PeerExactMatch, SDEndorser> peer2sdEndorser = new HashMap<>(ep.size());
                 for (SDEndorser sdEndorser : ep) {
 
-                    final Peer epeer = lpeerEndpointMap.get(sdEndorser.getEndpoint());
+                    Peer epeer = lpeerEndpointMap.get(sdEndorser.getEndpoint());
                     if (epeer != null && !epeer.hasConnected()) {
                         // mostly because gossip may have malicious data so if we've not connected update TLS props from chaincode discovery.
                         final Properties properties = epeer.getProperties();
@@ -4149,9 +4149,19 @@ public class Channel implements Serializable {
                             }
                         });
                     }
+                    /*
+                    provenance.io -> if the anchor peer uses mutual
+                    tls then so will the discovered epeers - copy the
+                    grpc options from the anchor peer (the clientCertBytes and clientKeyBytes)
+                    to the discovered peer
+                     */
+                    epeer.getProperties().containsKey("clientCertBytes");
+                    epeer.getProperties().containsKey("clientKeyBytes");
+
+                    Peer finalEpeer = epeer;
                     Optional<Peer> sdPeerO = getServiceDiscoveryPeers().stream()
                             .filter(p -> p.getProperties().get(PEER_ORGANIZATION_MSPID_PROPERTY).equals(
-                                epeer.getProperties().get(PEER_ORGANIZATION_MSPID_PROPERTY)))
+                                finalEpeer.getProperties().get(PEER_ORGANIZATION_MSPID_PROPERTY)))
                             .findFirst();
 
                     if (sdPeerO.isPresent()) {
