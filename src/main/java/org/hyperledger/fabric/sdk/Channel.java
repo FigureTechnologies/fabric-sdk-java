@@ -201,6 +201,7 @@ public class Channel implements Serializable {
     private transient ScheduledExecutorService sweeperExecutorService;
     private transient String blh = null;
     private transient ServiceDiscovery serviceDiscovery;
+    private static final boolean asLocalhost = config.discoverAsLocalhost();
 
     {
         for (Peer.PeerRole peerRole : EnumSet.allOf(PeerRole.class)) {
@@ -1391,6 +1392,16 @@ public class Channel implements Serializable {
                     public Map<String, Orderer> getEndpointMap() {
                         return Collections.unmodifiableMap(Channel.this.ordererEndpointMap);
                     }
+
+                    @Override
+                    public Properties getProperties() {
+                        return sdOrderer.getProperties();
+                    }
+
+                    @Override
+                    public boolean isTLS() {
+                        return sdOrderer.isTLS();
+                    }
                 });
             }
 
@@ -1469,6 +1480,25 @@ public class Channel implements Serializable {
                         return Collections.unmodifiableMap(Channel.this.peerEndpointMap);
                     }
 
+                    @Override
+                    public String getName() {
+                        return sdEndorser.getName();
+                    }
+
+                    @Override
+                    public Properties getProperties() {
+                        Properties properties = new Properties();
+                        if (asLocalhost) {
+                            properties.put("hostnameOverride",
+                                    sdEndorser.getName().substring(0, sdEndorser.getName().lastIndexOf(':')));
+                        }
+                        return properties;
+                    }
+
+                    @Override
+                    public boolean isTLS() {
+                        return sdEndorser.isTLS();
+                    }
                 });
             } else if (discoveryEndpoints.contains(sdEndorser.getEndpoint())) {
 
@@ -1501,6 +1531,7 @@ public class Channel implements Serializable {
     }
 
     public interface SDPeerAdditionInfo {
+        String getName();
 
         String getMspId();
 
@@ -1540,6 +1571,9 @@ public class Channel implements Serializable {
 
         Map<String, Peer> getEndpointMap();
 
+        Properties getProperties();
+
+        boolean isTLS();
     }
 
     public interface SDPeerAddition {
@@ -1606,6 +1640,8 @@ public class Channel implements Serializable {
 
         String getEndpoint();
 
+        Properties getProperties();
+
         String getMspId();
 
         Channel getChannel();
@@ -1641,6 +1677,8 @@ public class Channel implements Serializable {
         }
 
         Map<String, Orderer> getEndpointMap();
+
+        boolean isTLS();
     }
 
     public interface SDOrdererAddition {
@@ -1664,11 +1702,11 @@ public class Channel implements Serializable {
         @Override
         public Orderer addOrderer(SDOrdererAdditionInfo sdOrdererAdditionInfo) throws InvalidArgumentException, ServiceDiscoveryException {
 
-            Properties properties = new Properties();
+            Properties properties = sdOrdererAdditionInfo.getProperties();
             final String endpoint = sdOrdererAdditionInfo.getEndpoint();
             final String mspid = sdOrdererAdditionInfo.getMspId();
 
-            String protocol = (String) findClientProp(config, "protocol", mspid, endpoint, "grpcs:");
+            String protocol = (String) findClientProp(config, "protocol", mspid, endpoint, sdOrdererAdditionInfo.isTLS() ? "grpcs:" : "grpc:");
 
             String clientCertFile = (String) findClientProp(config, "clientCertFile", mspid, endpoint, null);
 
@@ -1723,11 +1761,12 @@ public class Channel implements Serializable {
         @Override
         public Peer addPeer(SDPeerAdditionInfo sdPeerAddition) throws InvalidArgumentException, ServiceDiscoveryException {
 
-            Properties properties = new Properties();
+            Properties properties = sdPeerAddition.getProperties();
+            final String name = sdPeerAddition.getName();
             final String endpoint = sdPeerAddition.getEndpoint();
             final String mspid = sdPeerAddition.getMspId();
 
-            String protocol = (String) findClientProp(config, "protocol", mspid, endpoint, "grpcs:");
+            String protocol = (String) findClientProp(config, "protocol", mspid, endpoint, sdPeerAddition.isTLS() ? "grpcs:" : "grpc:");
 
             Peer peer = sdPeerAddition.getEndpointMap().get(endpoint); // maybe there already.
             if (null != peer) {
@@ -1764,12 +1803,12 @@ public class Channel implements Serializable {
                 properties.put("pemBytes", pemBytes);
             }
 
-            peer = sdPeerAddition.getClient().newPeer(endpoint,
+            peer = sdPeerAddition.getClient().newPeer(name,
                     protocol + "//" + endpoint,
                     properties);
 
             sdPeerAddition.getChannel().addPeer(peer, createPeerOptions().setPeerRoles(
-                    EnumSet.of(PeerRole.ENDORSING_PEER, PeerRole.EVENT_SOURCE, PeerRole.LEDGER_QUERY, PeerRole.CHAINCODE_QUERY))); //application can decide on roles.
+                    EnumSet.of(PeerRole.ENDORSING_PEER, PeerRole.EVENT_SOURCE, PeerRole.LEDGER_QUERY, PeerRole.CHAINCODE_QUERY, PeerRole.SERVICE_DISCOVERY))); //application can decide on roles.
 
             return peer;
         }
@@ -4144,6 +4183,26 @@ public class Channel implements Serializable {
                             @Override
                             public Map<String, Peer> getEndpointMap() {
                                 return Collections.unmodifiableMap(Channel.this.peerEndpointMap);
+                            }
+
+                            @Override
+                            public String getName() {
+                                return sdEndorser.getName();
+                            }
+
+                            @Override
+                            public Properties getProperties() {
+                                Properties properties = new Properties();
+                                if (asLocalhost) {
+                                    properties.put("hostnameOverride",
+                                            sdEndorser.getName().substring(0, sdEndorser.getName().lastIndexOf(':')));
+                                }
+                                return properties;
+                            }
+
+                            @Override
+                            public boolean isTLS() {
+                                return sdEndorser.isTLS();
                             }
                         });
                     }
