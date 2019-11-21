@@ -4,7 +4,7 @@
     <groupId>org.hyperledger.fabric-sdk-java</groupId>
     <artifactId>fabric-sdk-java</artifactId>
     <packaging>jar</packaging>
-    <version>1.4.6-SNAPSHOT</version>
+    <version>1.4.7</version>
     <name>fabric-java-sdk</name>
     <description>Java SDK for Hyperledger fabric project</description>
     <url>https://www.hyperledger.org/community/projects</url>
@@ -30,7 +30,7 @@
     <properties>
         <grpc.version>1.23.0</grpc.version><!-- CURRENT_GRPC_VERSION -->
         <protobuf.version>3.10.0</protobuf.version>
-        <bouncycastle.version>1.63</bouncycastle.version>
+        <bouncycastle.version>1.62</bouncycastle.version>
         <httpclient.version>4.5.10</httpclient.version>
         <javadoc.version>3.1.1</javadoc.version>
         <skipITs>true</skipITs>
@@ -99,7 +99,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-codec-http2</artifactId>
-            <version>4.1.41.Final</version>
+            <version>4.1.43.Final</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
         <dependency>
@@ -132,7 +132,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>1.18</version>
+            <version>1.19</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
