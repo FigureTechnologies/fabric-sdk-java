@@ -852,6 +852,15 @@ public class NetworkConfig {
                 props.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[] {new Long(value), TimeUnit.MILLISECONDS});
             }
 
+            /*
+            provenance.io max inbound message size must be integer so org.hyperledger.fabric.sdk.Endpoint#addNettyBuilderProps
+            will set it appropriately.
+             */
+            value = props.getProperty("grpc.NettyChannelBuilderOption.maxInboundMessageSize");
+            if (null != value) {
+                props.put("grpc.NettyChannelBuilderOption.maxInboundMessageSize", Integer.valueOf(value));
+            }
+
             value = props.getProperty("grpc.keepalive_without_calls");
             if (null != value) {
                 props.remove("grpc.keepalive_without_calls");
