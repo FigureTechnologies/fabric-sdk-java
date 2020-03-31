@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,6 +58,7 @@ import org.hyperledger.fabric.sdk.helper.Utils;
 import org.hyperledger.fabric.sdk.identity.X509Enrollment;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import static java.lang.String.format;
 import static org.hyperledger.fabric.sdk.helper.Utils.isNullOrEmpty;
@@ -84,7 +86,7 @@ public class NetworkConfig {
      */
     public Collection<String> getPeerNames() {
         if (peers == null) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         } else {
             return new HashSet<>(peers.keySet());
         }
@@ -97,7 +99,7 @@ public class NetworkConfig {
      */
     public Collection<String> getOrdererNames() {
         if (orderers == null) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         } else {
             return new HashSet<>(orderers.keySet());
         }
@@ -295,9 +297,8 @@ public class NetworkConfig {
             throw new InvalidArgumentException("configStream must be specified");
         }
 
-        Yaml yaml = new Yaml();
+        Yaml yaml = new Yaml(new SafeConstructor());
 
-        @SuppressWarnings ("unchecked")
         Map<String, Object> map = yaml.load(configStream);
 
         JsonObjectBuilder builder = Json.createObjectBuilder(map);
@@ -526,7 +527,7 @@ public class NetworkConfig {
 
         // Sanity check
         if (orderers != null) {
-            throw new NetworkConfigurationException("INTERNAL ERROR: orderers has already been initialized!");
+            throw new NetworkConfigurationException("INTERNAL ERROR: orderers have already been initialized!");
         }
 
         orderers = new HashMap<>();
@@ -559,7 +560,7 @@ public class NetworkConfig {
 
         // Sanity checks
         if (peers != null) {
-            throw new NetworkConfigurationException("INTERNAL ERROR: peers has already been initialized!");
+            throw new NetworkConfigurationException("INTERNAL ERROR: peers have already been initialized!");
         }
 
         peers = new HashMap<>();
@@ -616,7 +617,7 @@ public class NetworkConfig {
 
         // Sanity check
         if (organizations != null) {
-            throw new NetworkConfigurationException("INTERNAL ERROR: organizations has already been initialized!");
+            throw new NetworkConfigurationException("INTERNAL ERROR: organizations have already been initialized!");
         }
 
         organizations = new HashMap<>();
@@ -850,6 +851,12 @@ public class NetworkConfig {
                 props.remove("grpc.keepalive_timeout_ms");
                 props.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[] {new Long(value), TimeUnit.MILLISECONDS});
             }
+
+            value = props.getProperty("grpc.keepalive_without_calls");
+            if (null != value) {
+                props.remove("grpc.keepalive_without_calls");
+                props.put("grpc.NettyChannelBuilderOption.keepAliveWithoutCalls", new Object[] {Boolean.valueOf(value)});
+            }
         }
 
         // Extract the pem details
@@ -987,7 +994,7 @@ public class NetworkConfig {
                 throw new NetworkConfigurationException(format("%s: %s file %s does not exist", msgPrefix, fieldName, fullPathname));
             }
             try (FileInputStream stream = new FileInputStream(pemFile)) {
-                pemString = IOUtils.toString(stream, "UTF-8");
+                pemString = IOUtils.toString(stream, StandardCharsets.UTF_8);
             } catch (IOException ioe) {
                 throw new NetworkConfigurationException(format("Failed to read file: %s", fullPathname), ioe);
             }
@@ -1152,7 +1159,7 @@ public class NetworkConfig {
      */
 
     public Set<String> getChannelNames() {
-        Set<String> ret = Collections.EMPTY_SET;
+        Set<String> ret = Collections.emptySet();
 
         JsonObject channels = getJsonObject(jsonConfig, "channels");
         if (channels != null) {
