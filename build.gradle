@@ -56,8 +56,20 @@ allprojects {
         compile 'io.grpc:grpc-netty:1.23.0'
         compile 'io.grpc:grpc-protobuf:1.23.0'
         compile 'io.grpc:grpc-stub:1.23.0'
+
+        // diverge from HLF netty versions to fix
+        // https://github.com/netty/netty/issues/9147
         compile 'io.netty:netty-tcnative-boringssl-static:2.0.30.Final'
+        compile 'io.netty:netty-buffer:4.1.41.Final'
+        compile 'io.netty:netty-common:4.1.41.Final'
+        compile 'io.netty:netty-codec:4.1.41.Final'
         compile 'io.netty:netty-codec-http2:4.1.41.Final'
+        compile 'io.netty:netty-codec-http:4.1.41.Final'
+        compile 'io.netty:netty-transport:4.1.41.Final'
+        compile 'io.netty:netty-handler:4.1.41.Final'
+        compile 'io.netty:netty-handler-proxy:4.1.41.Final'
+        compile 'io.netty:netty-resolver:4.1.41.Final'
+
         compile 'com.google.protobuf:protobuf-java:3.10.0'
         compile 'com.google.protobuf:protobuf-java-util:3.10.0'
         compile 'org.bouncycastle:bcpkix-jdk15on:1.63'
